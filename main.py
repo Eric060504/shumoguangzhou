@@ -409,6 +409,7 @@ def run_q1(base_params: dict, summary_rows: list[dict]) -> dict[str, pd.DataFram
 
     df_plankton.to_csv(DATA_DIR / "q1_plankton_timeseries.csv", index=False)
     df_macro.to_csv(DATA_DIR / "q1_macrophyte_timeseries.csv", index=False)
+    compare_df.to_csv(DATA_DIR / "q1_ban_compare.csv", index=False)
 
     summary_rows.extend(
         [
