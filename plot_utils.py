@@ -108,8 +108,10 @@ def plot_sensitivity_curve(
     # 用统一风格输出单因素灵敏度曲线，便于比较参数扫描对响应量的影响方向和强弱。
     fig, ax = plt.subplots(figsize=(10.5, 6.2))
     if hue_col and hue_col in df.columns:
+        # 如果一个图里需要比较多条响应曲线，就按 hue 分组绘制。
         sns.lineplot(data=df, x=x_col, y=y_col, hue=hue_col, marker="o", linewidth=2.4, ax=ax)
     else:
+        # 当前项目的大多数灵敏度图是一参数一响应，因此默认画成单条折线。
         sns.lineplot(data=df, x=x_col, y=y_col, marker="o", linewidth=2.4, ax=ax, color="#4c72b0")
     ax.set_title(title)
     ax.set_xlabel("参数取值")

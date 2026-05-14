@@ -11,11 +11,14 @@ FIGURE_DIR = OUTPUT_DIR / "figures"
 DATA_DIR = OUTPUT_DIR / "data"
 REPORT_DIR = OUTPUT_DIR / "reports"
 
+# 统一管理全局模拟时间设置。
+# 当前主流程默认模拟 10 年，并把时间离散为 2001 个点，兼顾曲线平滑度和运行效率。
 SIMULATION_YEARS = 10.0
 TIME_POINTS = 2001
 TIME_SPAN = (0.0, SIMULATION_YEARS)
 TIME_GRID = None
 
+# 绘图风格集中放在这里，方便统一调中文字体、分辨率和整体观感。
 PLOT_STYLE = {
     "font_candidates": ["SimHei", "Microsoft YaHei", "Arial Unicode MS", "sans-serif"],
     "dpi": 180,
@@ -26,6 +29,7 @@ PLOT_STYLE = {
     "context": "talk",
 }
 
+# 这是项目级的参数说明摘要，用于快速解释“模型里哪些设定来自文档，哪些来自生态学估计”。
 PARAMETER_METADATA = {
     "document_based": [
         "禁渔通过降低捕捞强度 F 进入系统",
@@ -41,6 +45,8 @@ PARAMETER_METADATA = {
     ],
 }
 
+# EI 指数的默认权重。
+# 这里只控制各指标在综合评分中的相对重要性，不参与种群动力学方程本身。
 DEFAULT_EI_WEIGHTS = {
     # 这里的 H 是 EI 指数里“阻断压力项”的权重，不是阻断参数本身。
     "B": 0.22,
@@ -52,6 +58,8 @@ DEFAULT_EI_WEIGHTS = {
     "H": 0.08,
 }
 
+# Q1 子模型 1：浮游植物-浮游动物-鲢鱼-鳙鱼系统参数。
+# 重点体现初级生产、滤食关系、污染影响和禁渔前后的捕捞差异。
 Q1_PLANKTON_PARAMS = {
     "r_P": 1.10,
     "K_P": 135.0,
@@ -76,6 +84,8 @@ Q1_PLANKTON_PARAMS = {
     "E": 0.18,
 }
 
+# Q1 子模型 2：水草-底栖资源-草鱼-青鱼系统参数。
+# 这一组更偏向草食链和底栖资源链，对应四大家鱼中的另外两类典型功能群。
 Q1_MACROPHYTE_PARAMS = {
     "r_V": 0.92,
     "K_V": 128.0,
@@ -98,6 +108,8 @@ Q1_MACROPHYTE_PARAMS = {
     "E": 0.14,
 }
 
+# Q2 鲟类恢复模型参数。
+# 这里同时包含自然增长、死亡、阻断、捕捞和人工放流五类作用。
 Q2_STURGEON_PARAMS = {
     "r_S": 0.18,
     "K_S": 42.0,
@@ -116,6 +128,8 @@ Q2_STURGEON_PARAMS = {
     "stocking_mode": "piecewise",
 }
 
+# Q2 江豚模型参数。
+# 江豚响应主要通过鱼类资源供给、污染和人为干扰三个因素体现。
 Q2_PORPOISE_PARAMS = {
     "r_D": 0.11,
     "K_D": 24.0,
@@ -127,6 +141,8 @@ Q2_PORPOISE_PARAMS = {
     "human_disturbance": 0.04,
 }
 
+# Q3 广义 Lotka-Volterra 食物网参数。
+# labels/r/K/A/F/theta 共同定义功能群层面的增长、相互作用、捕捞和污染压力。
 Q3_GLV_PARAMS = {
     "labels": ["R", "F", "T", "I"],
     "r": [0.88, 0.24, 0.15, 0.28],
@@ -142,6 +158,8 @@ Q3_GLV_PARAMS = {
     "theta": [0.05, 0.08, 0.10, 0.06],
 }
 
+# Q4 稳定极限环示例参数。
+# 这组参数的目标是生成“MLE < 0”的持续振荡轨迹，用于展示规则周期行为。
 Q4_LIMIT_CYCLE_PARAMS = {
     "r0": 1.05,
     "K": 1.15,
@@ -157,6 +175,8 @@ Q4_LIMIT_CYCLE_PARAMS = {
     "omega": 2.0,
 }
 
+# Q4 混沌示例参数。
+# 这组参数经过展示性选择，使系统更容易出现“MLE > 0”的复杂吸引子。
 Q4_CHAOS_PARAMS = {
     "r0": 1.42,
     "K": 1.0,
@@ -172,6 +192,8 @@ Q4_CHAOS_PARAMS = {
     "omega": 5.6,
 }
 
+# Q5 本土种-入侵种竞争模型参数。
+# 污染通过压缩容纳量、提高死亡率进入模型，竞争项决定两类群体的长期占优关系。
 Q5_NATIVE_INVASIVE_PARAMS = {
     "r_N": 0.46,
     "K_N0": 95.0,
@@ -188,6 +210,8 @@ Q5_NATIVE_INVASIVE_PARAMS = {
     "E": 0.18,
 }
 
+# 所有子模型的默认初始状态。
+# 这些值统一解释为相对生物量或相对数量，其来源和缩放逻辑在下方元信息表中详细说明。
 INITIAL_CONDITIONS = {
     "q1_plankton": [82.0, 30.0, 19.3, 15.2],
     "q1_macrophyte": [76.0, 55.0, 18.0, 13.5],
@@ -199,6 +223,8 @@ INITIAL_CONDITIONS = {
     "q5_native_invasive": [63.8, 8.5],
 }
 
+# 统一管理公报、附件和论文的索引信息。
+# 后续 README 和导出的参数表都只引用 source_id，真正的题名、年份和链接都从这里查。
 SOURCE_LIBRARY = {
     "bulletin_2022_gov": {
         "type": "bulletin",
@@ -293,6 +319,8 @@ SOURCE_LIBRARY = {
     },
 }
 
+# 为每个状态变量补充“默认值 + 来源 + 缩放逻辑”说明。
+# 这里强调的是“为什么初值取这个量级”，而不是把公报原始统计量直接当成模型状态量。
 INITIAL_CONDITION_METADATA = {
     "q1_plankton": {
         "P": {
@@ -436,6 +464,8 @@ INITIAL_CONDITION_METADATA = {
     },
 }
 
+# 记录关键生态学参数的含义、量纲、默认值和来源类型。
+# 这部分主要服务于三件事：README 说明、论文附录追溯、后续参数校准。
 PARAMETER_SOURCES = {
     "Q1_PLANKTON_PARAMS": {
         "r_P": {"meaning": "浮游植物内禀增长率", "unit": "1/年", "default": 1.10, "source_type": "literature", "source_id": "tian2006_parameterization", "sensitivity": False},
@@ -494,6 +524,8 @@ PARAMETER_SOURCES = {
     },
 }
 
+# 对缺乏长江专属精确标定的关键参数给出区间。
+# 这些区间既是“不确定性声明”，也是灵敏度分析扫描的直接输入。
 PARAMETER_RANGES = {
     "Q2_STURGEON_PARAMS": {
         "rho": {"default": 0.90, "lower": 0.60, "upper": 1.20, "reason": "阻断对繁殖成功率和洄游损失的放大程度缺乏统一实测值", "method": "single_factor_scan"},
@@ -515,6 +547,8 @@ PARAMETER_RANGES = {
     },
 }
 
+# 明确规定“哪些参数需要做灵敏度分析、怎么扫、看什么响应量”。
+# 主程序会逐条读取这个清单，自动生成 CSV 和曲线图，因此这里相当于灵敏度分析的任务配置表。
 SENSITIVITY_SPECS = [
     {"name": "Q2_rho", "module": "Q2", "kind": "scalar", "param_group": "q2_sturgeon", "param_name": "rho", "values": [0.60, 0.75, 0.90, 1.05, 1.20], "response": "sturgeon_final"},
     {"name": "Q2_stocking_width", "module": "Q2", "kind": "scalar", "param_group": "q2_sturgeon", "param_name": "stocking_width", "values": [0.06, 0.10, 0.12, 0.16, 0.20], "response": "sturgeon_final"},
@@ -530,6 +564,8 @@ SENSITIVITY_SPECS = [
     {"name": "Q5_beta_IN", "module": "Q5", "kind": "scalar", "param_group": "q5_native_invasive", "param_name": "beta_IN", "values": [0.40, 0.49, 0.58, 0.69, 0.80], "response": "EI"},
 ]
 
+# 情景层只负责描述“在基线参数上做哪些管理或压力扰动”。
+# 所有场景都尽量保持含义单一，例如污染、入侵、放流、阻断背景分别管理，避免语义混杂。
 SCENARIOS = {
     "baseline": {
         "description": "禁渔基线恢复情景",
@@ -580,6 +616,7 @@ SCENARIOS = {
 
 
 def build_base_parameter_sets() -> dict[str, dict]:
+    # 返回一份可安全修改的基础参数副本，避免后续情景覆盖时污染原始默认参数。
     return {
         "q1_plankton": deepcopy(Q1_PLANKTON_PARAMS),
         "q1_macrophyte": deepcopy(Q1_MACROPHYTE_PARAMS),
@@ -593,6 +630,7 @@ def build_base_parameter_sets() -> dict[str, dict]:
 
 
 def merge_params(base: dict, updates: dict | None) -> dict:
+    # 用浅层键覆盖的方式组合“基础参数 + 情景修正项”，满足本项目当前配置结构。
     merged = deepcopy(base)
     if updates:
         merged.update(deepcopy(updates))

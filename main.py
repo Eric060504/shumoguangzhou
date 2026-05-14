@@ -175,6 +175,7 @@ def build_q3_symbolics(params: dict) -> tuple[list[sp.Symbol], sp.Matrix, np.nda
     harvests = [F0, F1, F2, F3]
     thetas = [th0, th1, th2, th3]
     for i, sym in enumerate(state_symbols):
+        # 这里严格复用数值模型中的 GLV 结构，避免“仿真方程”和“稳定性分析方程”口径不一致。
         interaction = sum(A[i][j] * state_symbols[j] for j in range(4))
         rhs.append(sym * (rates[i] * (1 - sym / caps[i]) + interaction - harvests[i] - thetas[i] * E))
     substitutions = {
@@ -229,6 +230,7 @@ def evaluate_q5_metrics(params: dict, reference: dict[str, float], scenario_name
     sol = integrate_system(q5_native_invasive_ode, INITIAL_CONDITIONS["q5_native_invasive"], params)
     final_state = {"N": float(sol.y[0, -1]), "I": float(sol.y[1, -1])}
     context = SCENARIOS[scenario_name]["ei_context"]
+    # EI 中的阻断压力始终回到 Q2 的坝群阻断定义，不在 Q5 单独造一个 H。
     H_value, fragmentation_scenario = resolve_fragmentation_from_scenario(
         context.get("fragmentation_scenario"),
         build_base_parameter_sets()["q2_sturgeon"],
@@ -273,6 +275,7 @@ def export_parameter_tables() -> None:
         for parameter_name, meta in parameters.items():
             range_rows.append({"group": group_name, "parameter": parameter_name, **meta})
     pd.DataFrame(range_rows).to_csv(REPORT_DIR / "parameter_ranges_table.csv", index=False)
+    # 这些结构化表格后续既能给 README 用，也方便直接复制进论文附录或答辩材料。
 
 
 def apply_sensitivity_spec(base_params: dict, spec: dict, value: float) -> dict:
@@ -281,14 +284,18 @@ def apply_sensitivity_spec(base_params: dict, spec: dict, value: float) -> dict:
     group = params[spec["param_group"]]
     kind = spec["kind"]
     if kind == "scalar":
+        # 最简单的情况是直接改一个标量参数。
         group[spec["param_name"]] = value
     elif kind == "stocking_scale":
+        # 放流强度不改时间点，只按倍率整体放大/缩小每次放流规模。
         group["stocking_schedule"] = [
             {**item, "magnitude": item["magnitude"] * value} for item in group.get("stocking_schedule", [])
         ]
     elif kind == "list_scale":
+        # 坝群阻断率按统一倍率缩放，并截断到概率允许的区间。
         group[spec["param_name"]] = [float(np.clip(item * value, 0.0, 0.999)) for item in group[spec["param_name"]]]
     elif kind == "matrix_entry":
+        # GLV 交互矩阵只改一个关键位置，用来观察局部相互作用变化带来的稳定性响应。
         row_idx, col_idx = spec["index"]
         group[spec["param_name"]][row_idx][col_idx] = value
     else:
@@ -307,6 +314,7 @@ def run_sensitivity_analyses(base_params: dict, q2_results: dict[str, pd.DataFra
         for value in spec["values"]:
             tuned_params = apply_sensitivity_spec(base_params, spec, value)
             if spec["module"] == "Q2":
+                # Q2 灵敏度默认放在“中阻断 + 有放流”的恢复背景下比较，便于看管理参数的边际影响。
                 params = merge_params(tuned_params["q2_sturgeon"], SCENARIOS["sturgeon_medium_H"]["q2_sturgeon"])
                 params = merge_params(params, SCENARIOS["sturgeon_stocking_on"]["q2_sturgeon"])
                 sol = integrate_system(q2_sturgeon_ode, INITIAL_CONDITIONS["q2_sturgeon"], params)
@@ -316,6 +324,7 @@ def run_sensitivity_analyses(base_params: dict, q2_results: dict[str, pd.DataFra
                     "response_aux_name": "H",
                 }
             elif spec["module"] == "Q3":
+                # Q3 关注的是稳定性而不是单纯终值，因此响应量选“最大实部特征值”。
                 params = merge_params(tuned_params["q3_glv"], SCENARIOS["baseline"]["q3_glv"])
                 eq, eig = evaluate_q3_stability(params)
                 response_payload = {
@@ -324,6 +333,7 @@ def run_sensitivity_analyses(base_params: dict, q2_results: dict[str, pd.DataFra
                     "response_aux_name": "equilibrium_norm",
                 }
             elif spec["module"] == "Q5":
+                # Q5 默认放在“禁渔+入侵压力”背景下扫描，便于突出污染敏感参数和竞争参数的作用。
                 params = merge_params(tuned_params["q5_native_invasive"], SCENARIOS["ban_invasion"]["q5_native_invasive"])
                 metrics = evaluate_q5_metrics(params, reference, scenario_name="ban_invasion")
                 response_payload = {
@@ -352,6 +362,7 @@ def run_sensitivity_analyses(base_params: dict, q2_results: dict[str, pd.DataFra
     sensitivity_df.to_csv(DATA_DIR / "sensitivity_analysis.csv", index=False)
 
     for spec_name, spec_df in sensitivity_df.groupby("spec_name", sort=False):
+        # 每个关键参数单独出一张曲线图，后续写论文时可以按需挑选展示。
         plot_sensitivity_curve(
             spec_df,
             FIGURE_DIR,
