@@ -1,0 +1,17 @@
+group,variable,default,unit,source_type,source_id,basis,scaling_logic
+q1_plankton,P,82.0,相对生物量,bulletin,bulletin_2022_gov,依据公报中 2020-2022 年水生生物资源恢复趋势，将初级生产者设为较高基线量级。,采用 0-150 相对生物量尺度，资源恢复态势映射为 80 左右的初值。
+q1_plankton,Z,30.0,相对生物量,attachment,attachment_2_foodweb,依据浮游动物位于浮游植物之上、四大家鱼之下的营养级位置设定相对量级。,按食物链中层丰度低于初级生产者但高于鱼类的原则赋值。
+q1_plankton,L,19.3,相对生物量,bulletin,bulletin_2022_gov,参考公报中 2022 年鱼类监测到 193 种的恢复信号，并结合四大家鱼生态地位进行缩放。,用鱼类恢复趋势构造 10-25 的中等鱼类初值区间，默认取 19.3。
+q1_plankton,B,15.2,相对生物量,attachment,attachment_2_foodweb,依据鳙鱼位于滤食鱼中较高营养级位置，初值略低于鲢鱼。,相对于鲢鱼取 0.75-0.85 比例，默认 15.2。
+q1_macrophyte,V,76.0,相对生物量,bulletin,bulletin_2022_gov,水生植被按资源恢复背景设为较高值。,在相对尺度上略低于浮游植物，反映主河道与通江湖泊水生植被恢复不完全。
+q1_macrophyte,R,55.0,相对生物量,attachment,attachment_2_foodweb,底栖资源为青鱼摄食基础，按中高资源水平设定。,设置在 40-70 区间内，保持高于草鱼和青鱼初值。
+q1_macrophyte,C,18.0,相对生物量,literature,yi2010_carps,结合四大家鱼产卵栖息地受水坝影响的文献背景，草鱼初值设为中等恢复状态。,保持与鲢鱼同量级，但受草食资源约束略低于部分滤食群。
+q1_macrophyte,M,13.5,相对生物量,attachment,attachment_2_foodweb,青鱼作为更高营养级鱼类，初值低于草鱼。,采用草鱼初值的 70%-80%。
+q2_sturgeon,S,1.2,相对生物量,bulletin,bulletin_2022_gov,公报指出中华鲟自然繁殖形势仍严峻，因此设为极低基线。,在相对尺度下设置为接近濒危低值，不与放流数量直接等同。
+q2_porpoise,D,12.49,相对数量,bulletin,gov_porpoise_2022,依据 2022 年江豚数量 1249 头。,按 100:1 缩放为模型相对数量，得到 12.49。
+q3_glv,R,120.0,相对生物量,bulletin,bulletin_2022_gov,资源层按公报恢复态势设定为较高基线。,作为 GLV 资源层，取略高于 Q1 初级生产者的综合水平。
+q3_glv,F,46.0,相对生物量,attachment,attachment_2_foodweb,中层鱼类综合了四大家鱼和中小型鱼资源。,中层鱼类设为资源层的 35%-40%。
+q3_glv,T,12.0,相对数量,bulletin,gov_porpoise_2022,顶层捕食者参考江豚恢复规模。,采用与江豚相近的相对数量水平。
+q3_glv,I,9.0,相对生物量,bulletin,bulletin_2022_gov,公报提示外来物种需要警惕，因此设为中低起始量级。,保证低于本土中层鱼类，但不是接近零。
+q5_native_invasive,N,63.8,相对生物量,bulletin,bulletin_2022_gov,以长江鱼类资源恢复为基线，本土种初值高于入侵种。,按鱼类群落恢复态势设为中高值。
+q5_native_invasive,I,8.5,相对生物量,literature,freshwater_invasion_review,外来鱼类在多数河流中相对占比仍低于本土优势群体，但已形成持续压力。,保持为本土种的 10%-15%。

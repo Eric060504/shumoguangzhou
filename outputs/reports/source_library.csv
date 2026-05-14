@@ -1,0 +1,14 @@
+source_id,type,title,year,link,note
+bulletin_2022_gov,bulletin,《长江流域水生生物资源及生境状况公报（2022年）》发布：长江流域水生生物资源量呈恢复态势,2023,https://www.gov.cn/lianbo/bumen/202310/content_6908750.htm,官方通报中提到 2022 年重点水域监测到鱼类 193 种，较 2020 年增加 25 种，完整性指数总体回升。
+attachment_1_migration,attachment,附件1 长江鱼类洄游路径,2026,附件1 长江鱼类洄游路径.pdf,用于确定鲟类和四大家鱼的洄游/阻断结构，不直接提供连续动力学参数。
+attachment_2_foodweb,attachment,附件2 长江鱼类的食物链,2026,附件2 长江鱼类的食物链.pdf,用于确定食物链方向、营养级关系和功能群映射。
+gov_porpoise_2022,bulletin,"Number of finless porpoises in China exceeds 1,200",2023,https://english.www.gov.cn/statecouncil/ministries/202302/28/content_WS63fdfe52c6d0a757729e761d.html,"2022 年科学考察结果显示长江江豚数量达到 1,249 头，比 2017 年增长 23.42%。"
+yi2010_carps,literature,Impact of the Gezhouba and Three Gorges Dams on habitat suitability of carps in the Yangtze River,2010,https://doi.org/10.1016/j.jhydrol.2010.04.018,支持四大家鱼与大坝、产卵栖息地、水动力条件之间的关系。
+xu2012_assemblage,literature,Spatiotemporal patterns of the fish assemblages downstream of the Gezhouba Dam on the Yangtze River,2012,https://doi.org/10.1007/s11427-012-4349-0,支持阻断和水工扰动对鱼类群落结构的影响。
+chen2019_shift,literature,Regime shift in fish assemblage structure in the Yangtze River following construction of the Three Gorges Dam,2019,https://www.nature.com/articles/s41598-019-38993-x,支持大坝影响鱼类群落组成、自然繁殖和生态结构。
+holling1959,literature,The Components of Predation as Revealed by a Study of Small-Mammal Predation of the European Pine Sawfly,1959,https://doi.org/10.4039/Ent91293-5,支持捕食/摄食响应项的生态学解释。
+may1976,literature,Simple mathematical models with very complicated dynamics,1976,https://doi.org/10.1038/261459a0,支持三维食物链系统出现复杂动力学和混沌现象。
+tian2006_parameterization,literature,Toward standard parameterizations in marine biological modeling,2006,https://doi.org/10.1016/j.ecolmodel.2005.09.003,支持增长率、摄食、死亡率、转化效率等生态学参数量级和参数化原则。
+rubach2006_toxic,literature,Meta-analysis of intrinsic rates of increase and carrying capacity of populations affected by toxic and other stressors,2006,https://pubmed.ncbi.nlm.nih.gov/16193755/,支持污染通过降低增长能力/容纳量并提高额外压力进入模型。
+palmer2017_invasion,literature,Dynamic models in research and management of biological invasions,2017,https://doi.org/10.1016/j.jenvman.2017.03.060,支持入侵种竞争模型和动态参数扫描的建模思路。
+freshwater_invasion_review,literature,Freshwater Fish Invasions: A Comprehensive Review,2022,https://doi.org/10.1146/annurev-ecolsys-032522-015551,支持入侵鱼类对本土群落的竞争压力和风险设定。

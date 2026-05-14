@@ -95,3 +95,26 @@ def plot_radar(df: pd.DataFrame, out_dir: Path, stem: str) -> None:
     ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
     save_figure(fig, out_dir, stem)
 
+
+def plot_sensitivity_curve(
+    df: pd.DataFrame,
+    out_dir: Path,
+    stem: str,
+    title: str,
+    x_col: str = "value",
+    y_col: str = "response_value",
+    hue_col: str | None = None,
+) -> None:
+    # 用统一风格输出单因素灵敏度曲线，便于比较参数扫描对响应量的影响方向和强弱。
+    fig, ax = plt.subplots(figsize=(10.5, 6.2))
+    if hue_col and hue_col in df.columns:
+        sns.lineplot(data=df, x=x_col, y=y_col, hue=hue_col, marker="o", linewidth=2.4, ax=ax)
+    else:
+        sns.lineplot(data=df, x=x_col, y=y_col, marker="o", linewidth=2.4, ax=ax, color="#4c72b0")
+    ax.set_title(title)
+    ax.set_xlabel("参数取值")
+    ax.set_ylabel("响应量")
+    if hue_col and hue_col in df.columns:
+        ax.legend(title="")
+    save_figure(fig, out_dir, stem)
+

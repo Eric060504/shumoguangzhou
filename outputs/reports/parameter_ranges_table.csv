@@ -1,0 +1,13 @@
+group,parameter,default,lower,upper,reason,method
+Q2_STURGEON_PARAMS,rho,0.9,0.6,1.2,阻断对繁殖成功率和洄游损失的放大程度缺乏统一实测值,single_factor_scan
+Q2_STURGEON_PARAMS,stocking_width,0.12,0.06,0.2,放流脉冲作用时间窗取决于数值近似和管理节律,single_factor_scan
+Q2_STURGEON_PARAMS,stocking_scale,1.0,0.6,1.4,放流强度可因年度投放规模差异而变化,single_factor_scan
+Q2_STURGEON_PARAMS,p_list_scale,1.0,0.7,1.3,阻断概率受坝群联合作用和通道可通过性不确定性影响,single_factor_scan
+Q3_GLV_PARAMS,A_10,0.01,0.006,0.016,资源层对中层鱼类补给强度缺乏长江专属标定,single_factor_scan
+Q3_GLV_PARAMS,A_12,-0.01,-0.016,-0.006,顶层捕食对中层鱼类压制强度具有明显不确定性,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,theta_N,0.95,0.7,1.2,本土鱼类对污染导致容纳量下降的敏感程度具有区域差异,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,theta_I,0.38,0.2,0.6,入侵种通常对环境扰动更耐受，但缺乏统一定量值,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,gamma_N,0.13,0.08,0.18,污染诱导额外死亡率受污染类型和鱼类耐受性影响,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,gamma_I,0.05,0.02,0.1,入侵种额外死亡率预期小于本土种，但存在不确定性,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,alpha_NI,0.72,0.5,0.95,入侵竞争压力与入侵种功能性状和栖位重叠有关,single_factor_scan
+Q5_NATIVE_INVASIVE_PARAMS,beta_IN,0.58,0.4,0.8,本土种反制入侵种能力缺乏长江统一量化结果,single_factor_scan

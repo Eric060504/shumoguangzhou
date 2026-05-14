@@ -1,0 +1,40 @@
+group,parameter,meaning,unit,default,source_type,source_id,sensitivity
+Q1_PLANKTON_PARAMS,r_P,浮游植物内禀增长率,1/年,1.1,literature,tian2006_parameterization,False
+Q1_PLANKTON_PARAMS,r_Z,浮游动物内禀增长率,1/年,0.82,literature,tian2006_parameterization,False
+Q1_PLANKTON_PARAMS,alpha_PZ,浮游动物摄食浮游植物强度,1/(生物量·年),0.02,literature,holling1959,True
+Q1_PLANKTON_PARAMS,alpha_PL,鲢鱼摄食浮游植物强度,1/(生物量·年),0.017,estimated_range,attachment_2_foodweb,True
+Q1_PLANKTON_PARAMS,alpha_ZB,鳙鱼摄食浮游动物强度,1/(生物量·年),0.018,estimated_range,attachment_2_foodweb,True
+Q1_PLANKTON_PARAMS,mu_L,鲢鱼自然死亡率,1/年,0.12,literature,tian2006_parameterization,False
+Q1_PLANKTON_PARAMS,mu_B,鳙鱼自然死亡率,1/年,0.11,literature,tian2006_parameterization,False
+Q1_PLANKTON_PARAMS,theta_P,污染对浮游植物的敏感系数,无量纲,0.16,literature,rubach2006_toxic,False
+Q1_PLANKTON_PARAMS,theta_Z,污染对浮游动物的敏感系数,无量纲,0.13,literature,rubach2006_toxic,False
+Q1_MACROPHYTE_PARAMS,r_V,水草内禀增长率,1/年,0.92,literature,tian2006_parameterization,False
+Q1_MACROPHYTE_PARAMS,r_R,底栖资源恢复率,1/年,0.72,estimated_range,attachment_2_foodweb,False
+Q1_MACROPHYTE_PARAMS,alpha_VC,草鱼利用水草强度,1/(生物量·年),0.021,attachment,attachment_2_foodweb,True
+Q1_MACROPHYTE_PARAMS,alpha_RM,青鱼利用底栖资源强度,1/(生物量·年),0.015,attachment,attachment_2_foodweb,True
+Q1_MACROPHYTE_PARAMS,theta_V,污染对水草敏感系数,无量纲,0.1,literature,rubach2006_toxic,False
+Q2_STURGEON_PARAMS,r_S,鲟类内禀增长率,1/年,0.18,estimated_range,xu2012_assemblage,False
+Q2_STURGEON_PARAMS,rho,阻断压力放大系数,无量纲,0.9,estimated_range,attachment_1_migration,True
+Q2_STURGEON_PARAMS,F_S,鲟类捕捞强度,1/年,0.06,bulletin,bulletin_2022_gov,False
+Q2_STURGEON_PARAMS,p_list,各关键大坝阻断概率,概率,"[0.18, 0.24, 0.16]",attachment,attachment_1_migration,True
+Q2_STURGEON_PARAMS,stocking_width,单次放流作用时间窗,年,0.12,estimated_range,gov_porpoise_2022,True
+Q2_STURGEON_PARAMS,stocking_schedule,放流时刻与放流强度,相对数量/年,4次分段注入,estimated_range,gov_porpoise_2022,True
+Q2_PORPOISE_PARAMS,r_D,江豚恢复率,1/年,0.11,bulletin,gov_porpoise_2022,False
+Q2_PORPOISE_PARAMS,theta_D,污染对江豚敏感系数,无量纲,0.16,literature,rubach2006_toxic,False
+Q2_PORPOISE_PARAMS,human_disturbance,航运和人类活动扰动强度,1/年,0.04,estimated_range,bulletin_2022_gov,False
+Q3_GLV_PARAMS,r,功能群增长率向量,1/年,"[0.88, 0.24, 0.15, 0.28]",literature,tian2006_parameterization,False
+Q3_GLV_PARAMS,A,功能群相互作用矩阵,1/(生物量·年),4x4 矩阵,estimated_range,attachment_2_foodweb,True
+Q3_GLV_PARAMS,F,功能群外部损失项,1/年,"[0.0, 0.11, 0.03, 0.02]",bulletin,bulletin_2022_gov,False
+Q3_GLV_PARAMS,theta,功能群污染敏感系数,无量纲,"[0.05, 0.08, 0.1, 0.06]",literature,rubach2006_toxic,False
+Q4_LIMIT_CYCLE_PARAMS,eps,周期扰动幅值,无量纲,0.05,literature,may1976,False
+Q4_LIMIT_CYCLE_PARAMS,omega,周期扰动频率,1/年,2.0,literature,may1976,False
+Q4_CHAOS_PARAMS,eps,周期扰动幅值,无量纲,0.28,literature,may1976,False
+Q4_CHAOS_PARAMS,omega,周期扰动频率,1/年,5.6,literature,may1976,False
+Q5_NATIVE_INVASIVE_PARAMS,r_N,本土鱼类增长率,1/年,0.46,literature,freshwater_invasion_review,False
+Q5_NATIVE_INVASIVE_PARAMS,r_I,入侵鱼类增长率,1/年,0.55,literature,freshwater_invasion_review,False
+Q5_NATIVE_INVASIVE_PARAMS,theta_N,污染对本土种容纳量压缩强度,无量纲,0.95,literature,rubach2006_toxic,True
+Q5_NATIVE_INVASIVE_PARAMS,theta_I,污染对入侵种容纳量压缩强度,无量纲,0.38,estimated_range,freshwater_invasion_review,True
+Q5_NATIVE_INVASIVE_PARAMS,gamma_N,污染提高本土种死亡率的强度,1/年,0.13,literature,rubach2006_toxic,True
+Q5_NATIVE_INVASIVE_PARAMS,gamma_I,污染提高入侵种死亡率的强度,1/年,0.05,estimated_range,freshwater_invasion_review,True
+Q5_NATIVE_INVASIVE_PARAMS,alpha_NI,入侵种对本土种竞争系数,无量纲,0.72,literature,palmer2017_invasion,True
+Q5_NATIVE_INVASIVE_PARAMS,beta_IN,本土种对入侵种竞争系数,无量纲,0.58,literature,palmer2017_invasion,True

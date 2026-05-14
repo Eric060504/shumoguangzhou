@@ -11,3 +11,9 @@
 - Q2 放流默认为分段注入，不直接离散 delta 函数
 - Q4 混沌示例参数为展示性选择，服务于稳定极限环/混沌吸引子可视化
 - 情景层不直接定义 H，所有阻断压力均通过 p_list 聚合得到
+
+[parameter_data_exports]
+- source_library.csv：参考来源索引表
+- initial_conditions_table.csv：初始值来源表
+- parameter_sources_table.csv：文献/公报支撑参数表
+- parameter_ranges_table.csv：区间赋值与灵敏度分析参数表

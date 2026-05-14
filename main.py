@@ -14,11 +14,16 @@ from config import (
     DEFAULT_EI_WEIGHTS,
     FIGURE_DIR,
     INITIAL_CONDITIONS,
+    INITIAL_CONDITION_METADATA,
     OUTPUT_DIR,
     PARAMETER_METADATA,
+    PARAMETER_RANGES,
+    PARAMETER_SOURCES,
     PLOT_STYLE,
     REPORT_DIR,
     SCENARIOS,
+    SENSITIVITY_SPECS,
+    SOURCE_LIBRARY,
     TIME_POINTS,
     TIME_SPAN,
     build_base_parameter_sets,
@@ -39,6 +44,7 @@ from plot_utils import (
     plot_ei_horizontal_bar,
     plot_phase_portrait,
     plot_radar,
+    plot_sensitivity_curve,
     plot_sturgeon_recovery,
     plot_time_series,
     setup_plot_style,
@@ -147,6 +153,219 @@ def build_q4_symbolics():
     }
 
 
+def build_q3_symbolics(params: dict) -> tuple[list[sp.Symbol], sp.Matrix, np.ndarray]:
+    # 把 Q3 的符号 Jacobian 构造单独封装，便于主流程和灵敏度分析复用同一套稳定性计算逻辑。
+    state_symbols = list(sp.symbols("R F T I", positive=True))
+    r0, r1, r2, r3 = sp.symbols("r0 r1 r2 r3")
+    K0, K1, K2, K3 = sp.symbols("K0 K1 K2 K3")
+    F0, F1, F2, F3 = sp.symbols("F0 F1 F2 F3")
+    th0, th1, th2, th3, E = sp.symbols("th0 th1 th2 th3 E")
+    a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33 = sp.symbols(
+        "a00 a01 a02 a03 a10 a11 a12 a13 a20 a21 a22 a23 a30 a31 a32 a33"
+    )
+    A = [
+        [a00, a01, a02, a03],
+        [a10, a11, a12, a13],
+        [a20, a21, a22, a23],
+        [a30, a31, a32, a33],
+    ]
+    rhs = []
+    rates = [r0, r1, r2, r3]
+    caps = [K0, K1, K2, K3]
+    harvests = [F0, F1, F2, F3]
+    thetas = [th0, th1, th2, th3]
+    for i, sym in enumerate(state_symbols):
+        interaction = sum(A[i][j] * state_symbols[j] for j in range(4))
+        rhs.append(sym * (rates[i] * (1 - sym / caps[i]) + interaction - harvests[i] - thetas[i] * E))
+    substitutions = {
+        r0: params["r"][0],
+        r1: params["r"][1],
+        r2: params["r"][2],
+        r3: params["r"][3],
+        K0: params["K"][0],
+        K1: params["K"][1],
+        K2: params["K"][2],
+        K3: params["K"][3],
+        F0: params["F"][0],
+        F1: params["F"][1],
+        F2: params["F"][2],
+        F3: params["F"][3],
+        th0: params["theta"][0],
+        th1: params["theta"][1],
+        th2: params["theta"][2],
+        th3: params["theta"][3],
+        E: params["E"],
+        a00: params["A"][0][0],
+        a01: params["A"][0][1],
+        a02: params["A"][0][2],
+        a03: params["A"][0][3],
+        a10: params["A"][1][0],
+        a11: params["A"][1][1],
+        a12: params["A"][1][2],
+        a13: params["A"][1][3],
+        a20: params["A"][2][0],
+        a21: params["A"][2][1],
+        a22: params["A"][2][2],
+        a23: params["A"][2][3],
+        a30: params["A"][3][0],
+        a31: params["A"][3][1],
+        a32: params["A"][3][2],
+        a33: params["A"][3][3],
+    }
+    return state_symbols, symbolic_jacobian(state_symbols, rhs), substitutions
+
+
+def evaluate_q3_stability(params: dict) -> tuple[np.ndarray, object]:
+    # 返回 Q3 平衡点和特征值分析结果，作为灵敏度扫描的目标响应量。
+    eq = solve_equilibrium(q3_glv_foodweb_ode, INITIAL_CONDITIONS["q3_glv"], params)
+    state_symbols, jac, substitutions = build_q3_symbolics(params)
+    jac_num = evaluate_jacobian(jac, state_symbols, eq, substitutions=substitutions)
+    eig = eigen_analysis(jac_num)
+    return eq, eig
+
+
+def evaluate_q5_metrics(params: dict, reference: dict[str, float], scenario_name: str = "ban_invasion") -> dict[str, float]:
+    # 把 Q5 指标计算抽成公共函数，保证主流程和灵敏度分析使用完全一致的 EI 口径。
+    sol = integrate_system(q5_native_invasive_ode, INITIAL_CONDITIONS["q5_native_invasive"], params)
+    final_state = {"N": float(sol.y[0, -1]), "I": float(sol.y[1, -1])}
+    context = SCENARIOS[scenario_name]["ei_context"]
+    H_value, fragmentation_scenario = resolve_fragmentation_from_scenario(
+        context.get("fragmentation_scenario"),
+        build_base_parameter_sets()["q2_sturgeon"],
+    )
+    metrics = {
+        "N_final": final_state["N"],
+        "I_final": final_state["I"],
+        "B": calc_biodiversity_index({"N": final_state["N"], "I": final_state["I"], "S": reference["S"], "D": reference["D"]}),
+        "Q": calc_water_quality_index(context["E"]),
+        "Rp": calc_recovery_index(reference["S"], reference["D"], reference),
+        "Cf": calc_foodweb_connectivity({"N": final_state["N"], "I": final_state["I"], "S": reference["S"], "D": reference["D"]}),
+        "E": float(np.clip(context["E"], 0.0, 1.0)),
+        "I": float(np.clip(context["I_pressure"], 0.0, 1.0)),
+        "H": float(np.clip(H_value, 0.0, 1.0)),
+        "fragmentation_scenario": fragmentation_scenario,
+    }
+    metrics["EI"] = calc_ei(metrics, DEFAULT_EI_WEIGHTS)
+    return metrics
+
+
+def export_parameter_tables() -> None:
+    # 把参数来源、初值来源、参数区间和参考文献导出成 CSV，便于 README 和论文附录直接引用。
+    source_rows = []
+    for source_id, meta in SOURCE_LIBRARY.items():
+        source_rows.append({"source_id": source_id, **meta})
+    pd.DataFrame(source_rows).to_csv(REPORT_DIR / "source_library.csv", index=False)
+
+    initial_rows = []
+    for group_name, variables in INITIAL_CONDITION_METADATA.items():
+        for variable, meta in variables.items():
+            initial_rows.append({"group": group_name, "variable": variable, **meta})
+    pd.DataFrame(initial_rows).to_csv(REPORT_DIR / "initial_conditions_table.csv", index=False)
+
+    parameter_rows = []
+    for group_name, parameters in PARAMETER_SOURCES.items():
+        for parameter_name, meta in parameters.items():
+            parameter_rows.append({"group": group_name, "parameter": parameter_name, **meta})
+    pd.DataFrame(parameter_rows).to_csv(REPORT_DIR / "parameter_sources_table.csv", index=False)
+
+    range_rows = []
+    for group_name, parameters in PARAMETER_RANGES.items():
+        for parameter_name, meta in parameters.items():
+            range_rows.append({"group": group_name, "parameter": parameter_name, **meta})
+    pd.DataFrame(range_rows).to_csv(REPORT_DIR / "parameter_ranges_table.csv", index=False)
+
+
+def apply_sensitivity_spec(base_params: dict, spec: dict, value: float) -> dict:
+    # 单因素灵敏度分析只改变一个参数，其余参数保持默认值，避免不同不确定性彼此混叠。
+    params = deepcopy(base_params)
+    group = params[spec["param_group"]]
+    kind = spec["kind"]
+    if kind == "scalar":
+        group[spec["param_name"]] = value
+    elif kind == "stocking_scale":
+        group["stocking_schedule"] = [
+            {**item, "magnitude": item["magnitude"] * value} for item in group.get("stocking_schedule", [])
+        ]
+    elif kind == "list_scale":
+        group[spec["param_name"]] = [float(np.clip(item * value, 0.0, 0.999)) for item in group[spec["param_name"]]]
+    elif kind == "matrix_entry":
+        row_idx, col_idx = spec["index"]
+        group[spec["param_name"]][row_idx][col_idx] = value
+    else:
+        raise ValueError(f"Unsupported sensitivity kind: {kind}")
+    return params
+
+
+def run_sensitivity_analyses(base_params: dict, q2_results: dict[str, pd.DataFrame], summary_rows: list[dict]) -> pd.DataFrame:
+    # 对关键缺失参数做局部单因素扫描，并输出参数-响应曲线图与汇总表。
+    reference = {
+        "S": float(q2_results["sturgeon"].groupby(["scenario", "stocking"])["sturgeon"].last().max()),
+        "D": float(q2_results["porpoise"]["D"].max()),
+    }
+    records = []
+    for spec in SENSITIVITY_SPECS:
+        for value in spec["values"]:
+            tuned_params = apply_sensitivity_spec(base_params, spec, value)
+            if spec["module"] == "Q2":
+                params = merge_params(tuned_params["q2_sturgeon"], SCENARIOS["sturgeon_medium_H"]["q2_sturgeon"])
+                params = merge_params(params, SCENARIOS["sturgeon_stocking_on"]["q2_sturgeon"])
+                sol = integrate_system(q2_sturgeon_ode, INITIAL_CONDITIONS["q2_sturgeon"], params)
+                response_payload = {
+                    "response_value": float(sol.y[0, -1]),
+                    "response_aux": float(compute_fragmentation(params["p_list"])),
+                    "response_aux_name": "H",
+                }
+            elif spec["module"] == "Q3":
+                params = merge_params(tuned_params["q3_glv"], SCENARIOS["baseline"]["q3_glv"])
+                eq, eig = evaluate_q3_stability(params)
+                response_payload = {
+                    "response_value": float(eig.max_real_part),
+                    "response_aux": float(np.linalg.norm(eq)),
+                    "response_aux_name": "equilibrium_norm",
+                }
+            elif spec["module"] == "Q5":
+                params = merge_params(tuned_params["q5_native_invasive"], SCENARIOS["ban_invasion"]["q5_native_invasive"])
+                metrics = evaluate_q5_metrics(params, reference, scenario_name="ban_invasion")
+                response_payload = {
+                    "response_value": float(metrics["EI"]),
+                    "response_aux": float(metrics["N_final"]),
+                    "response_aux_name": "N_final",
+                    "response_aux_2": float(metrics["I_final"]),
+                    "response_aux_2_name": "I_final",
+                }
+            else:
+                raise ValueError(f"Unsupported module: {spec['module']}")
+
+            records.append(
+                {
+                    "spec_name": spec["name"],
+                    "module": spec["module"],
+                    "parameter": spec["param_name"],
+                    "kind": spec["kind"],
+                    "value": value,
+                    "response_name": spec["response"],
+                    **response_payload,
+                }
+            )
+
+    sensitivity_df = pd.DataFrame(records)
+    sensitivity_df.to_csv(DATA_DIR / "sensitivity_analysis.csv", index=False)
+
+    for spec_name, spec_df in sensitivity_df.groupby("spec_name", sort=False):
+        plot_sensitivity_curve(
+            spec_df,
+            FIGURE_DIR,
+            f"{spec_name.lower()}_sensitivity",
+            f"{spec_name} 单因素灵敏度曲线",
+        )
+
+    grouped = sensitivity_df.groupby("spec_name")["response_value"]
+    for spec_name, values in grouped:
+        summary_rows.append({"module": "Sensitivity", "metric": f"{spec_name}_min", "value": float(values.min())})
+        summary_rows.append({"module": "Sensitivity", "metric": f"{spec_name}_max", "value": float(values.max())})
+    return sensitivity_df
+
+
 def run_q1(base_params: dict, summary_rows: list[dict]) -> dict[str, pd.DataFrame]:
     # 执行 Q1 全流程：禁渔前后仿真、时间序列绘图和结果落盘。
     baseline_plankton = merge_params(base_params["q1_plankton"], SCENARIOS["baseline"]["q1_plankton"])
@@ -250,68 +469,7 @@ def run_q3(base_params: dict, summary_rows: list[dict]) -> pd.DataFrame:
     df.to_csv(DATA_DIR / "q3_glv_foodweb.csv", index=False)
     plot_time_series(df, FIGURE_DIR, "Q3 广义 Lotka-Volterra 食物网演化", "q3_glv_foodweb")
 
-    eq = solve_equilibrium(q3_glv_foodweb_ode, INITIAL_CONDITIONS["q3_glv"], params)
-    state_symbols = list(sp.symbols("R F T I", positive=True))
-    r0, r1, r2, r3 = sp.symbols("r0 r1 r2 r3")
-    K0, K1, K2, K3 = sp.symbols("K0 K1 K2 K3")
-    F0, F1, F2, F3 = sp.symbols("F0 F1 F2 F3")
-    th0, th1, th2, th3, E = sp.symbols("th0 th1 th2 th3 E")
-    a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33 = sp.symbols(
-        "a00 a01 a02 a03 a10 a11 a12 a13 a20 a21 a22 a23 a30 a31 a32 a33"
-    )
-    A = [
-        [a00, a01, a02, a03],
-        [a10, a11, a12, a13],
-        [a20, a21, a22, a23],
-        [a30, a31, a32, a33],
-    ]
-    rhs = []
-    rates = [r0, r1, r2, r3]
-    caps = [K0, K1, K2, K3]
-    harvests = [F0, F1, F2, F3]
-    thetas = [th0, th1, th2, th3]
-    for i, sym in enumerate(state_symbols):
-        # 这里按和数值模型相同的 GLV 结构重建符号表达式，便于 Jacobian 保持一致。
-        interaction = sum(A[i][j] * state_symbols[j] for j in range(4))
-        rhs.append(sym * (rates[i] * (1 - sym / caps[i]) + interaction - harvests[i] - thetas[i] * E))
-    jac = symbolic_jacobian(state_symbols, rhs)
-    subs = {
-        r0: params["r"][0],
-        r1: params["r"][1],
-        r2: params["r"][2],
-        r3: params["r"][3],
-        K0: params["K"][0],
-        K1: params["K"][1],
-        K2: params["K"][2],
-        K3: params["K"][3],
-        F0: params["F"][0],
-        F1: params["F"][1],
-        F2: params["F"][2],
-        F3: params["F"][3],
-        th0: params["theta"][0],
-        th1: params["theta"][1],
-        th2: params["theta"][2],
-        th3: params["theta"][3],
-        E: params["E"],
-        a00: params["A"][0][0],
-        a01: params["A"][0][1],
-        a02: params["A"][0][2],
-        a03: params["A"][0][3],
-        a10: params["A"][1][0],
-        a11: params["A"][1][1],
-        a12: params["A"][1][2],
-        a13: params["A"][1][3],
-        a20: params["A"][2][0],
-        a21: params["A"][2][1],
-        a22: params["A"][2][2],
-        a23: params["A"][2][3],
-        a30: params["A"][3][0],
-        a31: params["A"][3][1],
-        a32: params["A"][3][2],
-        a33: params["A"][3][3],
-    }
-    jac_num = evaluate_jacobian(jac, state_symbols, eq, substitutions=subs)
-    eig = eigen_analysis(jac_num)
+    eq, eig = evaluate_q3_stability(params)
     summary_rows.extend(
         [
             {"module": "Q3_glv", "metric": "equilibrium_norm", "value": float(np.linalg.norm(eq))},
@@ -395,25 +553,8 @@ def run_q5(base_params: dict, q2_results: dict[str, pd.DataFrame], summary_rows:
         sol = integrate_system(q5_native_invasive_ode, INITIAL_CONDITIONS["q5_native_invasive"], params)
         df = solution_to_frame(sol, ["N", "I"])
         df.to_csv(DATA_DIR / f"{scenario_name}_q5.csv", index=False)
-        final_state = {"N": float(df["N"].iloc[-1]), "I": float(df["I"].iloc[-1])}
-        context = SCENARIOS[scenario_name]["ei_context"]
-        # 阻断项 H 不从场景直接读取，而是从对应阻断背景情景的 p_list 统一计算。
-        H_value, fragmentation_scenario = resolve_fragmentation_from_scenario(
-            context.get("fragmentation_scenario"),
-            base_params["q2_sturgeon"],
-        )
-        metrics = {
-            "B": calc_biodiversity_index({"N": final_state["N"], "I": final_state["I"], "S": reference["S"], "D": reference["D"]}),
-            "Q": calc_water_quality_index(context["E"]),
-            "Rp": calc_recovery_index(reference["S"], reference["D"], reference),
-            "Cf": calc_foodweb_connectivity({"N": final_state["N"], "I": final_state["I"], "S": reference["S"], "D": reference["D"]}),
-            "E": float(np.clip(context["E"], 0.0, 1.0)),
-            "I": float(np.clip(context["I_pressure"], 0.0, 1.0)),
-            "H": float(np.clip(H_value, 0.0, 1.0)),
-        }
-        metrics["EI"] = calc_ei(metrics, DEFAULT_EI_WEIGHTS)
+        metrics = evaluate_q5_metrics(params, reference, scenario_name=scenario_name)
         metrics["scenario"] = SCENARIOS[scenario_name]["description"]
-        metrics["fragmentation_scenario"] = fragmentation_scenario
         scenario_rows.append(metrics)
         summary_rows.append({"module": "Q5_EI", "metric": scenario_name, "value": metrics["EI"]})
         summary_rows.append({"module": "Q5_EI", "metric": f"{scenario_name}_H", "value": metrics["H"]})
@@ -433,6 +574,12 @@ def save_project_metadata() -> None:
         lines.append(f"[{key}]")
         lines.extend(f"- {item}" for item in values)
         lines.append("")
+    lines.append("[parameter_data_exports]")
+    lines.append("- source_library.csv：参考来源索引表")
+    lines.append("- initial_conditions_table.csv：初始值来源表")
+    lines.append("- parameter_sources_table.csv：文献/公报支撑参数表")
+    lines.append("- parameter_ranges_table.csv：区间赋值与灵敏度分析参数表")
+    lines.append("")
     meta_path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -441,6 +588,7 @@ def main() -> None:
     ensure_output_dirs()
     setup_plot_style(PLOT_STYLE)
     save_project_metadata()
+    export_parameter_tables()
     base_params = build_base_parameter_sets()
     summary_rows: list[dict] = []
 
@@ -449,6 +597,7 @@ def main() -> None:
     q3_results = run_q3(base_params, summary_rows)
     q4_results = run_q4(base_params, summary_rows)
     q5_results = run_q5(base_params, q2_results, summary_rows)
+    sensitivity_results = run_sensitivity_analyses(base_params, q2_results, summary_rows)
 
     summary_df = pd.DataFrame(summary_rows)
     summary_df.to_csv(REPORT_DIR / "summary.csv", index=False)
@@ -461,14 +610,16 @@ def main() -> None:
                 "Q3 GLV",
                 "Q4 phase portraits",
                 "Q5 EI",
+                "Sensitivity analysis",
             ],
-            "status": ["ok"] * 5,
+            "status": ["ok"] * 6,
             "notes": [
                 f"{len(q1_results['plankton'])} rows + {len(q1_results['macro'])} rows",
                 f"{len(q2_results['sturgeon'])} sturgeon rows",
                 f"{len(q3_results)} rows",
                 f"MLE saved in summary ({summary_df[summary_df['metric'] == 'MLE'].shape[0]} entries)",
                 f"{len(q5_results)} scenarios",
+                f"{len(sensitivity_results)} sensitivity rows",
             ],
         }
     )
